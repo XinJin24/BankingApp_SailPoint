@@ -38,6 +38,7 @@ public class banking_window {
             else
             {
                 System.out.println("Wrong account num or password, Try again!");
+                mainWindow();
             }
         }
         else if(option==2)
@@ -45,15 +46,18 @@ public class banking_window {
             String[] account;
             account=createAccount();
             insertIntoJson(account[0],account[1],account[2],account[3]);
+            System.out.println("a new account is created!");
             mainWindow();
         }
         else if(option==3)
         {
             System.out.println("Thank you! Have a good day!");
+            scan.close();
         }
         else
         {
             System.out.println("invalid Input, try again!");
+            mainWindow();
         }
 
     }
@@ -63,7 +67,7 @@ public class banking_window {
         System.out.println("                 1. Balance ");
         System.out.println("                 2. Deposit");
         System.out.println("                 3. Withdraw");
-        System.out.println("                 4. Cancel");
+        System.out.println("                 4. Sign out");
         System.out.println("--------------------------------------------------");
         Scanner scan=new Scanner(System.in);
         int option=scan.nextInt();scan.nextLine();
@@ -76,15 +80,29 @@ public class banking_window {
         {
             System.out.println("how much do you deposit?");
             String deposit=scan.nextLine();
-            updateBalance(acc,deposit);
-            System.out.println("Deposit "+deposit+" have been successful!");
-            innerOptionsWindow(acc,name);
+            if(!deposit.matches("[0-9]+"))
+            {
+                System.out.println("deposit amount contains non-numerical value! ");
+                innerOptionsWindow(acc,name);
+            }
+            else
+            {
+                updateBalance(acc,deposit);
+                System.out.println("Deposit $"+deposit+" Successfully!");
+                innerOptionsWindow(acc,name);
+            }
+
         }
         else if(option==3)
         {
             System.out.println("how much do you withdraw?");
             String withdraw=scan.nextLine();
-            if(Double.parseDouble(withdraw)>Double.parseDouble(getBalance(acc)))
+            if(!withdraw.matches("[0-9]+"))
+            {
+                System.out.println("Withdraw amount contains non-numerical value! ");
+                innerOptionsWindow(acc,name);
+            }
+            else if(Double.parseDouble(withdraw)>Double.parseDouble(getBalance(acc)))
             {
                 System.out.println("withdraw amount exceed the current balance in your card!");
                 innerOptionsWindow(acc,name);
@@ -92,13 +110,14 @@ public class banking_window {
             else
             {
                 updateBalance(acc,"-"+withdraw);
-                System.out.println("Withdraw "+withdraw+" have been successful!");
+                System.out.println("Withdraw $"+withdraw+" Successfully!");
                 innerOptionsWindow(acc,name);
             }
         }
         else if(option==4)
         {
                 System.out.println("Thank you! Have a good day!");
+                mainWindow();
         }
         else
         {
@@ -117,7 +136,7 @@ public class banking_window {
         {
             System.out.println("Your intended Account Number: ");
             acc = scan.nextLine();
-            if(!verifyIfExit(acc))
+            if(verifyIfExit(acc))
             {
                 System.out.println(acc +" is taken, try again!");
                 continue;
@@ -157,24 +176,37 @@ public class banking_window {
         inner.put("passWord",pass);
         inner.put("balance","0");
         arr.add(inner);
-        File file = new File("E://customers.json");
+        File file = new File("D://customers.json");
         if (file.exists()) {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
-            JSONArray array = (JSONArray) jsonObject.get("Customers");
-            PrintWriter write = new PrintWriter(new FileWriter(file));
-            Iterator<JSONObject> iterator = array.iterator();
-            while (iterator.hasNext()) {
-                JSONObject it = iterator.next();
-                data = (JSONObject) it;
-                arr.add(data);
+            if(jsonObject.isEmpty())
+            {
+                PrintWriter write = new PrintWriter(new FileWriter(file));
+                outer.put("Customers", arr);
+                write.write(outer.toString());
+                write.flush();
+                write.close();
             }
-            outer.put("Customers", arr);
-            write.write(outer.toString());
-            write.flush();
-            write.close();
+            else
+            {
+                JSONArray array = (JSONArray) jsonObject.get("Customers");
+                PrintWriter write = new PrintWriter(new FileWriter(file));
+                Iterator<JSONObject> iterator = array.iterator();
+                while (iterator.hasNext()) {
+                    JSONObject it = iterator.next();
+                    data = (JSONObject) it;
+                    arr.add(data);
+                }
+                outer.put("Customers", arr);
+                write.write(outer.toString());
+                write.flush();
+                write.close();
+            }
+
         } else {
             PrintWriter write = new PrintWriter(new FileWriter(file));
+            outer.put("Customers", arr);
             write.write(outer.toString());
             write.flush();
             write.close();
@@ -184,13 +216,13 @@ public class banking_window {
     public static void updateBalance(String acc,String change) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
         JSONObject data = new JSONObject();
-        File file = new File("E://customers.json");
+        File file = new File("D://customers.json");
         JSONObject outer = new JSONObject();
         JSONObject inner = new JSONObject();
         ArrayList<JSONObject> arr = new ArrayList<JSONObject>();
         if (file.exists())
         {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
             JSONArray array = (JSONArray) jsonObject.get("Customers");
             PrintWriter write = new PrintWriter(new FileWriter(file));
@@ -215,10 +247,10 @@ public class banking_window {
     public static String getBalance(String acc) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
         JSONObject data = new JSONObject();
-        File file = new File("E://customers.json");
+        File file = new File("D://customers.json");
         if (file.exists())
         {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
             JSONArray array = (JSONArray) jsonObject.get("Customers");
             Iterator<JSONObject> iterator = array.iterator();
@@ -236,10 +268,15 @@ public class banking_window {
     public static boolean verifyAccount(String acc, String pass) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
         JSONObject data = new JSONObject();
-        File file = new File("E://customers.json");
+        JSONObject outer = new JSONObject();
+        File file = new File("D://customers.json");
         if (file.exists()) {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
+            if(jsonObject.isEmpty())
+            {
+                return false;
+            }
             JSONArray array = (JSONArray) jsonObject.get("Customers");
             Iterator<JSONObject> iterator = array.iterator();
             while (iterator.hasNext()) {
@@ -252,16 +289,27 @@ public class banking_window {
             }
             return false;
 
-        } else {return false;}
+        } else {
+            PrintWriter write = new PrintWriter(new FileWriter(file));
+            write.write(outer.toString());
+            write.flush();
+            write.close();
+            return false;
+        }
     }
 
     public static boolean verifyIfExit(String acc) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
         JSONObject data = new JSONObject();
-        File file = new File("E://customers.json");
+        JSONObject outer = new JSONObject();
+        File file = new File("D://customers.json");
         if (file.exists()) {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
+            if(jsonObject.isEmpty())
+            {
+                return false;
+            }
             JSONArray array = (JSONArray) jsonObject.get("Customers");
             Iterator<JSONObject> iterator = array.iterator();
             while (iterator.hasNext()) {
@@ -269,20 +317,20 @@ public class banking_window {
                 data = (JSONObject) it;
                 if(acc.contentEquals((String)data.get("accountNum")))
                 {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
 
         } else {return false;}
     }
     public static String getName(String acc, String pass) throws IOException, ParseException {
         JSONParser parser = new JSONParser();
         JSONObject data = new JSONObject();
-        File file = new File("E://customers.json");
+        File file = new File("D://customers.json");
         if (file.exists())
         {
-            Object obj = parser.parse(new FileReader("E://customers.json"));
+            Object obj = parser.parse(new FileReader("D://customers.json"));
             JSONObject jsonObject = (JSONObject) obj;
             JSONArray array = (JSONArray) jsonObject.get("Customers");
             Iterator<JSONObject> iterator = array.iterator();
